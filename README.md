@@ -51,3 +51,42 @@ CSRF全称Cross-Site Request Forgery，是跨站请求伪造攻击的意思，�
 用户首先登录了一个普通网站A，这时新的session就会被创建，用户的浏览器会自动存储cookie信息以及session id，这样短期内再打开网站或者网站的其他链接，用户就不需要重复登陆了。如果此时，用户访问了攻击者制作的恶意网站B，攻击者设置的对A的跨站请求就会被触发，并且由于浏览器的机制，cookie信息和session id会被附加到这个请求中(即使它是跨站的)。于是，A就会以为这个请求是用户发出的从而执行请求内容。只要稍加设计，攻击者就能利用该漏洞进行盗取用户隐私信息，篡改用户数据等行为。
 
 具体来说，恶意网站可以伪造HTTP的GET和POST请求，在HTML的img,iframe,frame等标签中可以发起GET请求，而form标签可以发起POST请求。前者相对简单，后者需要用到JavaScript的技术。因为Elgg只使用POST，所以实验中会涉及到HTTP POST请求和JavaScript的使用。
+
+## CSRF Ataack using GET Request
+
+这个任务要求通过CSRF手段伪造GET请求，通过引诱对方打开恶意网站来实现GET请求的发送，并借助受害者浏览器保存的Cookie进行伪装。
+
+假设矮穷矬Boby想和白富美Alice成为好友，但Alice不同意，于是Boby灵机一动，决定通过CSRF的手段强制让Alice加自己好友。具体来说Boby给Alice发了一个URL，Alice对此表示好奇，就点开了这个URL，此时她就会在不知情的情况下把Boby添加为好友了。
+
+要实现这样的功能首先要了解Elgg中添加好友的机制：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image8.png)
+
+打开两个浏览器应用，分别登录Alice和Boby的账户。要添加对方为好友可以先在导航栏找到More，然后点击Members选项来到Members页面，这里可以看到全部用户：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image9.png)
+
+找到Boby后，点击进入Boby的Profile页面，可以看到头像下方有一个Add friend按钮，点击后就会自动添加Boby为好友了，我们需要观察这个动作是如何实现的。
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image10.png)
+
+要了解Add friend触发什么请求我们可以使用LiveHttpHeader这个插件，SEEDUbuntu已经预装好，在Firefox菜单栏的Tools选项卡中选择LiveHttpHeader就可以打开，然后勾选Capture，即可进行抓包：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image11.png)
+
+点击Add friend后，查看Live HTTP headers的抓包结果，可以清晰地看到这是一个GET请求，高亮的部分就是发出的链接。于是，我们需要做的就是把这个GET请求放在自己做的恶意网站中，并且把网站URL发给Alice，Alice点击后，这个跨站点的GET请求会被触发，浏览器识别出这是向Elgg发送的GET请求，于是自动把Cookie和Session ID附加上去，这时Elgg的服务器就会认为这个GET请求是Alice自己发出的，把Boby添加为Alice的朋友，Boby龌龊的计划就成功了。
+
+### 具体实现
+
+在/var/www/CSRF/Attacker/路径下创建task1.html：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image12.png)
+
+编写一个简单的HTML网页，借助img标签的src属性来发起跨站请求，把刚刚抓包得到的链接填进去：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image13.png)
+
+然后把这个网站的URL(http://www.csrflabattacker.com/task1.html)发给Alice，Alice点击后img标签自动触发GET请求，于是刷新一下就会发现Boby已经变成Alice的friend了：
+
+![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image14.png)
+
