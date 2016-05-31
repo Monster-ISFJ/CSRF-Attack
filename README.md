@@ -41,3 +41,13 @@
 ![配置](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image6.png)
 
 可以看到Apache用的是80端口，每个网站都有一个VirtualHost块，指定网站的URL和对应的资源目录。比如上面这个block，就绑定了[www.CSRFLabElgg.com](www.CSRFLabElgg.com)和/var/www/CSRF/elgg路径，修改该路径下的文件就能改变网站的配置。
+
+## 什么是CSRF攻击
+
+CSRF全称Cross-Site Request Forgery，是跨站请求伪造攻击的意思，这里面有两个关键词，一个是跨站，一个是伪造。前者说明CSRF攻击发生时所伴随的请求的来源，后者说明了该请求的产生方式。所谓伪造即该请求并不是用户本身的意愿，而是由攻击者构造，由受害者被动发出的。流程如下：
+
+![CSRF](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image7.png)
+
+用户首先登录了一个普通网站A，这时新的session就会被创建，用户的浏览器会自动存储cookie信息以及session id，这样短期内再打开网站或者网站的其他链接，用户就不需要重复登陆了。如果此时，用户访问了攻击者制作的恶意网站B，攻击者设置的对A的跨站请求就会被触发，并且由于浏览器的机制，cookie信息和session id会被附加到这个请求中(即使它是跨站的)。于是，A就会以为这个请求是用户发出的从而执行请求内容。只要稍加设计，攻击者就能利用该漏洞进行盗取用户隐私信息，篡改用户数据等行为。
+
+具体来说，恶意网站可以伪造HTTP的GET和POST请求，在HTML的img,iframe,frame等标签中可以发起GET请求，而form标签可以发起POST请求。前者相对简单，后者需要用到JavaScript的技术。因为Elgg只使用POST，所以实验中会涉及到HTTP POST请求和JavaScript的使用。
