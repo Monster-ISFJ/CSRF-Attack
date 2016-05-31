@@ -133,3 +133,18 @@ P.S.:后台处理表单提交的是/var/www/CSRF/elgg/actions/profile路径下�
 ![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image21.png)
 
 果然可怜的Boby已经被卖了~
+
+### Hint
+
+- 完成添加好友的操作需要知道对方的id（guid），如何获取到对方的id（guid）？
+
+> Alice可以通过一个类似Taks1这样的CSRF攻击来获取Boby用户的guid。不妨回顾一下Task1，当我们点击一个用户Profile页的Add friend按钮时，网站会发起一个GET请求：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image22.png)
+
+> 使用抓包工具可以看到这条链接中的friend字段后面跟着一个数值，这个数值就是朋友的guid。所以Alice要知道Boby的guid只需要添加他做好友，并且执行添加动作时抓包下来看看就可以了。
+
+- 如果需要让任意访问恶意网站的人都被修改掉其个人简介。但是，你又不能事先知道谁会访问这个恶意网站。这能还能通过CSRF来完成修改个人简介的操作么？HOW&WHY？
+
+> 能~ 假设CSRF攻击成功的前提是拥有用户的guid，我们可以先通过使用CSRF伪造GET请求来获取用户的guid，然后在伪造POST请求时赋值给guid字段就行了。无论是谁，只要没退出Elgg系统，那么访问了恶意网站的同时就会被篡改profile信息。
+
