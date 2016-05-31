@@ -90,3 +90,46 @@ CSRF全称Cross-Site Request Forgery，是跨站请求伪造攻击的意思，�
 
 ![CSRF1](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image14.png)
 
+## CSRF Attack using POST Request
+
+这个任务要求通过CSRF手段伪造POST请求，通过引诱对方打开恶意网站来实现POST请求的发送，并借助受害者浏览器保存的Cookie进行伪装。
+
+在这个任务中依然是Alice和Boby两位同学，但变成了Alice有求于Boby。Alice是SEED计划的发起人，她希望Boby可以在自己的profile中写上”I support SEED project!”，然而Boby十分讨厌做实验，不愿意写。于是黑化的Alice决定以其人之道还治其人之身，使用CSRF攻击手段强制修改Boby的profile。
+
+类似Task1，我们需要用Live HTTP Header来抓包，只是这次需要抓包的对象是提交Profile改动这个动作，显然这是一个提交表单发起的POST请求。
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image15.png)
+
+首先进入Edit profile界面，然后填写好各种信息，最后点击Save按钮提交：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image16.png)
+
+此时观测抓包状况，可以看到这个POST包，把内容提取出来：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image17.png)
+
+正是刚刚填写的表单内容，其中最重要的就是用来标识用户的guid字段。并且注意到每一个表单项后面都会跟着对应的accesslevel字段，且字段值是2，这些字段都是表单中隐藏的项，值是默认的，在伪造POST请求时要注意把这些字段也加入进去。
+P.S.:后台处理表单提交的是/var/www/CSRF/elgg/actions/profile路径下的edit.php脚本文件。
+
+基本代码在instruction中的Figure 1已经给出来了，思路是利用JavaScript来实现跨站POST请求。在Boy打开恶意网站URL时，网站的script会执行，而我们在script标签中伪造的表单会被提交，触发跨站POST请求。和Task1类似，浏览器会识别出这是向Elgg发送的请求，于是自动把Cookie和Session ID附加上去，这时Elgg的服务器就会认为这个POST请求是Boby自己发出的，修改了Boby的Profile，Alice的计划就成功了。
+
+### 具体实现
+
+同Task1类似，编写一个task2.html网页，在script标签中进行函数定义以及执行方式，script中没有被定义在函数内的代码会在网页加载时被执行。
+在csrf_hack函数中填写表单的各个字段，URL对应edit.php脚本文件的路径：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image18.png)
+
+在post函数中执行提交表单的操作，这是首先是在网站中动态生成一个表单对象，然后把表单内容设置为之前填写好的字段，触发动作设置为edit.php脚本文件对应的URL，方法自然是post。设置好并放入网站后，就可以使用submit方法提交表单了：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image19.png)
+
+最后，在函数外部定义函数执行的方式，这里定义为加载页面时执行csrf_hack函数就可以了：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image20.png)
+
+诱骗Boby点击Task2的URL(([http://www.csrflabattacker.com/task2.html](http://www.csrflabattacker.com/task2.html))后，再次浏览他的profile页：
+
+![CSRF2](https://raw.githubusercontent.com/familyld/CSRF-Attack/master/graph/image21.png)
+
+果然可怜的Boby已经被卖了~
